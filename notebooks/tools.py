@@ -81,3 +81,23 @@ def retrieve_hansen_mosaic(bounds, data_product='last', download_path=Path('./')
     print(f"Downloading {len(nx_ny)} Hansen {data_product} files")
     outputs = list(map(download_one_tile, nx_ny, [data_product]*len(nx_ny), [download_path]*len(nx_ny)))
     return outputs
+
+def denoise(img, weight=0.2, input_db=False, return_db=False):
+
+    idx = np.where((np.isnan(img)) | (np.isinf(img)) | (img == 0))
+    
+    # prevent nan issues
+    img[idx] = 1e-5
+    
+    # Convert to db and make noise additive
+    if not input_db:
+        img = 10 * np.log10(img)
+
+    # Use TV denoising. The weight parameter lambda = .2 worked well for SAR image
+    # Higher values mean less denoising and lower mean image will appear smoother.
+    img_tv = denoise_tv_bregman(img, weight)
+
+    if return_db:
+        return img_tv
+    else:
+        return 10**(img_tv / 10.)
