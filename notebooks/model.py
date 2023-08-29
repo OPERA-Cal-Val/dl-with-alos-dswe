@@ -18,8 +18,10 @@ class sarInferenceModel(pl.LightningModule):
 
         # model hyperparameters
         self.sarData = self.hparams.get("sarData", True)
+        self.sarDenoisingWeight = self.hparams.get("denoisingWeight", 0.2)
         self.opticalData = self.hparams.get("opticalData", True)
         self.demData = self.hparams.get("demData", True)
+        self.handData = self.hparams.get("handData", True)
 
         # The number of input channels will be calculated from specified inputs
         self.n_channels = 0
@@ -34,6 +36,9 @@ class sarInferenceModel(pl.LightningModule):
             self.n_channels += 4
 
         if self.demData:
+            self.n_channels += 1
+        
+        if self.handData:
             self.n_channels += 1
 
         # model input/output 
@@ -70,18 +75,24 @@ class sarInferenceModel(pl.LightningModule):
         self.output_path = Path.cwd() / self.output_path
         self.output_path.mkdir(exist_ok=True)
 
+        # Specify where TensorBoard logs will be saved
+        self.log_path = Path.cwd() / self.hparams.get("log_path", "tensorboard_logs")
+        self.log_path.mkdir(exist_ok=True)
+
         # Instantiate train & val datasets, model, and trainer params
         if training_data is not None:
             if 'transforms' in training_data:
                 transforms = training_data['transforms']
             self.train_dataset = datasetClass(x_paths=training_data['data'], y_paths=training_data['labels'], 
-            transforms=transforms, return_sar=self.sarData, return_optical=self.opticalData, return_dem=self.demData, 
-            mean_subtraction=self.subtract_mean, channel_drop=self.channel_drop)
+            transforms=transforms, return_sar=self.sarData, denoising_weight = self.sarDenoisingWeight, 
+            return_optical=self.opticalData, return_dem=self.demData, return_hand=self.handData,
+            channel_drop=self.channel_drop)
 
         if val_data is not None:
             self.val_dataset = datasetClass(x_paths=val_data['data'], y_paths=val_data['labels'], transforms=None, 
-            return_sar=self.sarData, return_optical=self.opticalData, return_dem=self.demData, 
-            mean_subtraction=self.subtract_mean, channel_drop=False)
+            return_sar=self.sarData, denoising_weight = self.sarDenoisingWeight, 
+            return_optical=self.opticalData, return_dem=self.demData, return_hand=self.handData,
+            channel_drop=False)
 
         self.model = self._prepare_model()
         self.trainer_params = self._get_trainer_params()
@@ -117,7 +128,8 @@ class sarInferenceModel(pl.LightningModule):
             on_step = False,
             on_epoch = True,
             prog_bar = True,
-            logger = True
+            logger = True,
+            rank_zero_only=False
         )
 
         self.log(
@@ -126,7 +138,8 @@ class sarInferenceModel(pl.LightningModule):
             on_step = False, 
             on_epoch = True, # Log metric at the end of an epoch
             prog_bar = False, # Logs to progress bar
-            logger = True # Log to tensorboard
+            logger = True, # Log to tensorboard
+            rank_zero_only=False
         )        
 
         self.log(
@@ -135,7 +148,8 @@ class sarInferenceModel(pl.LightningModule):
             on_step = False, 
             on_epoch = True, # Log metric at the end of an epoch
             prog_bar = False, # Logs to progress bar
-            logger = True # Log to tensorboard
+            logger = True, # Log to tensorboard
+            rank_zero_only=False
         )
         
         self.log(
@@ -143,7 +157,8 @@ class sarInferenceModel(pl.LightningModule):
             self.calc_precision(preds.clone(), y, 0),
             on_step = False,
             on_epoch = True,
-            logger = True
+            logger = True,
+            rank_zero_only=False
         )
 
         self.log(
@@ -151,7 +166,8 @@ class sarInferenceModel(pl.LightningModule):
             self.calc_recall(preds.clone(), y, 0),
             on_step = False,
             on_epoch = True,
-            logger = True
+            logger = True,
+            rank_zero_only=False
         )        
 
         return training_step_loss
@@ -179,7 +195,8 @@ class sarInferenceModel(pl.LightningModule):
             on_step = True,
             on_epoch = True,
             prog_bar = True,
-            logger = True
+            logger = True,
+            rank_zero_only=False
         )
         
         self.log(
@@ -188,7 +205,8 @@ class sarInferenceModel(pl.LightningModule):
             on_step = False, # Log metric at each step. False because this call happens at the end of an epoch
             on_epoch = True, # Log metric at the end of an epoch
             prog_bar = False, # Logs to progress bar
-            logger = True # Log to tensorboard
+            logger = True, # Log to tensorboard
+            rank_zero_only=False
         )
 
         self.log(
@@ -197,7 +215,8 @@ class sarInferenceModel(pl.LightningModule):
             on_step = False, # Log metric at each step. False because this call happens at the end of an epoch
             on_epoch = True, # Log metric at the end of an epoch
             prog_bar = False, # Logs to progress bar
-            logger = True # Log to tensorboard
+            logger = True, # Log to tensorboard
+            rank_zero_only=False
         )
 
         self.log(
@@ -205,7 +224,8 @@ class sarInferenceModel(pl.LightningModule):
             self.calc_precision(preds.clone(), y, 0),
             on_step = False,
             on_epoch = True,
-            logger = True
+            logger = True,
+            rank_zero_only=False
         )
 
         self.log(
@@ -213,7 +233,8 @@ class sarInferenceModel(pl.LightningModule):
             self.calc_recall(preds.clone(), y, 0),
             on_step = False,
             on_epoch = True,
-            logger = True
+            logger = True,
+            rank_zero_only=False
         )
 
         self.log(
@@ -221,14 +242,16 @@ class sarInferenceModel(pl.LightningModule):
             self.calc_precision(preds.clone(), y, 1),
             on_step = False,
             on_epoch = True,
-            logger = True
+            logger = True,
+            rank_zero_only=False
         )
         self.log(
             "notwater_recall",
             self.calc_recall(preds.clone(), y, 1),
             on_step = False,
             on_epoch = True,
-            logger = True
+            logger = True,
+            rank_zero_only=False
         )   
              
         return validation_step_loss
@@ -244,7 +267,7 @@ class sarInferenceModel(pl.LightningModule):
 
         # Define scheduler
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode="min", factor=0.5, patience=6
+            optimizer, mode="min", factor=0.5, patience=10
         )
         scheduler = {
             "scheduler": scheduler,
@@ -263,7 +286,7 @@ class sarInferenceModel(pl.LightningModule):
             verbose=True,
         )
         early_stop_callback = pl.callbacks.early_stopping.EarlyStopping(
-            monitor="train_loss",
+            monitor="val_loss",
             patience=(self.patience),
             mode="min",
             verbose=True,
@@ -271,9 +294,6 @@ class sarInferenceModel(pl.LightningModule):
             min_delta = 1e3
         )
 
-        # Specify where TensorBoard logs will be saved
-        self.log_path = Path.cwd() / self.hparams.get("log_path", "tensorboard_logs")
-        self.log_path.mkdir(exist_ok=True)
         logger = pl.loggers.TensorBoardLogger(self.log_path, name=self.experiment_name)
 
         trainer_params = {
@@ -282,7 +302,10 @@ class sarInferenceModel(pl.LightningModule):
             "min_epochs": self.min_epochs,
             "default_root_dir": self.output_path,
             "logger": logger,
-            "gpus": None if not self.gpu else self.ngpus,
+            # "gpus": None if not self.gpu else self.ngpus,
+            "accelerator":"gpu",
+            "devices": None if not self.gpu else self.ngpus,
+            "strategy":"ddp", #DDPStrategy(find_unused_parameters=False), 
             "fast_dev_run": self.hparams.get("fast_dev_run", False),
             "num_sanity_val_steps": self.hparams.get("num_sanity_val_steps", 0),
             "log_every_n_steps": 10
@@ -290,7 +313,7 @@ class sarInferenceModel(pl.LightningModule):
         return trainer_params
 
     def _prepare_model(self):
-        unet_model = smp.Unet(
+        dnn_model = smp.Unet(
             encoder_name=self.backbone,
             encoder_weights=self.weights,
             in_channels=self.in_channels,
@@ -302,8 +325,8 @@ class sarInferenceModel(pl.LightningModule):
 
         if self.gpu:
             assert torch.cuda.is_available, "GPU UNAVAILABLE"
-            unet_model.cuda()
-        return unet_model
+            dnn_model.cuda()
+        return dnn_model
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
@@ -311,7 +334,8 @@ class sarInferenceModel(pl.LightningModule):
             batch_size = self.batch_size,
             num_workers = self.num_workers,
             shuffle = True,
-            pin_memory = False # ??
+            pin_memory = False, # ??
+            drop_last=True
         )
 
     def val_dataloader(self):
@@ -320,7 +344,8 @@ class sarInferenceModel(pl.LightningModule):
             batch_size = self.batch_size,
             num_workers = self.num_workers,
             shuffle = False,
-            pin_memory = False
+            pin_memory = False,
+            drop_last=True
         )
 
     def fit(self):
@@ -328,81 +353,65 @@ class sarInferenceModel(pl.LightningModule):
         self.trainer = pl.Trainer(**self.trainer_params)
         self.trainer.fit(self)
 
-    def intersection_over_union(self, pred, target, val, average=True):
+    def intersection_over_union(self, pred, target, val):
         # dim 0 corresponds to batch size
         # dim 1 corresponds to output classes. argmax be on this dim
         # will result in array of dimensions [batch_size, rows, cols]
-        pred = torch.argmax(pred.clone().detach(), dim=1)
-        iou = []
+        pred_ = torch.argmax(pred.clone().detach(), dim=1)
 
-        for i in range(pred.shape[0]):
-            union_pixels = (target[i, ...].eq(val) | pred[i, ...].eq(val)).sum()
-            intersection_pixels = (target[i, ...].eq(val) & pred[i, ...].eq(val)).sum()
+        def iou_helper_(pred__, target__):
+            union_pixels = ((target__.eq(val) | pred__.eq(val)) & target__.ne(255)).sum()
+            intersection_pixels = (target__.eq(val) & pred__.eq(val)).sum()
 
-            _iou = intersection_pixels/union_pixels
+            iou__ = intersection_pixels/union_pixels
 
-            if (torch.isnan(_iou) | torch.isinf(_iou)):
-                iou.append(0)
+            if (torch.isnan(iou__) | torch.isinf(iou__)):
+                return None
             else:
-                iou.append(float(_iou.detach().cpu().numpy()))
-        
-        if average:
-            return sum(iou)/pred.shape[0] # will be a single number
-        else:
-            return iou # will be a list of length pred.shape[0]
+                return float(iou__.detach().cpu().numpy())
 
-    def calc_precision(self, pred, target, val, average=True):
+        sample_ious = np.array(list(map(iou_helper_, [pred_[i] for i in range(pred_.shape[0])], [target[i] for i in range(target.shape[0])])))
+
+        return np.sum(np.where(sample_ious==None, 0, sample_ious))/np.sum(sample_ious!=None)
+
+
+    def calc_precision(self, pred, target, val):
         # dim 0 corresponds to batch size
         # dim 1 corresponds to output classes. argmax be on this dim
         # will result in array of dimensions [batch_size, rows, cols]
         
-        _pred = torch.argmax(pred, dim=1)
-        w_prs = []
-        count = 0
+        pred_ = torch.argmax(pred, dim=1)
 
-        for i in range(_pred.shape[0]):
-            valid_pixels = target[i, ...].ne(255) & _pred[i, ...].eq(val)
+        def precision_helper_(pred__, target__):
+            valid_pixels = target__.ne(255) & pred__.eq(val)
             if valid_pixels.sum() == 0:
-                w_prs.append(0)
+                return None
             else:
-                w_prs.append(float(((_pred[i][valid_pixels] == target[i][valid_pixels]).sum()).detach().cpu().numpy())/float(valid_pixels.sum()))
-                count += 1
-            
-        if average:
-            if count:
-                return sum(w_prs)/count
-            else:
-                return 0
-        else:
-            return w_prs
+                return float(((pred__[valid_pixels] == target__[valid_pixels]).sum()).detach().cpu().numpy())/float(valid_pixels.sum())
 
-    def calc_recall(self, pred, target, val, average=True):
+        sample_precisions = np.array(list(map(precision_helper_, [pred_[i] for i in range(pred_.shape[0])], [target[i] for i in range(target.shape[0])])))
+
+        return np.sum(np.where(sample_precisions==None, 0, sample_precisions))/np.sum(sample_precisions!=None)
+
+    def calc_recall(self, pred, target, val):
         # dim 0 corresponds to batch size
         # dim 1 corresponds to output classes. argmax be on this dim
         # will result in array of dimensions [batch_size, rows, cols]
-        
-        _pred = torch.argmax(pred, dim=1)
-        w_prs = []
-        count = 0
-        for i in range(_pred.shape[0]):
-            valid_pixels = target[i, ...].eq(val)
+
+        pred_ = torch.argmax(pred, dim=1)
+
+        def recall_helper_(pred__, target__):
+            valid_pixels = target__.eq(val)
             if valid_pixels.sum() == 0:
-                w_prs.append(0)
+                return None
             else:
-                w_prs.append(float(((_pred[i][valid_pixels] == target[i][valid_pixels]).sum()).detach().cpu().numpy())/float(valid_pixels.sum()))
-                count += 1
+                return float(((pred__[valid_pixels] == target__[valid_pixels]).sum()).detach().cpu().numpy())/float(valid_pixels.sum())
+
+        sample_recalls = np.array(list(map(recall_helper_, [pred_[i] for i in range(pred_.shape[0])], [target[i] for i in range(target.shape[0])])))
+
+        return np.sum(np.where(sample_recalls==None, 0, sample_recalls))/np.sum(sample_recalls!=None)
+        
             
-        if average:
-            if count:
-                return sum(w_prs)/count
-            else:
-                return 0
-        else:
-            return w_prs
-
-    def calc_kappa(self, pred, target, val, average=True):
-        pass
-
     def xe_iou_loss(self, pred, target):
         iou = self.intersection_over_union(pred, target)
         xe_loss = self.xe_loss(pred, target)
