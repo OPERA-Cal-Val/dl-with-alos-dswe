@@ -15,12 +15,12 @@ The `0-Download-USGS-DSWE.ipynb` notebook demonstrates how to search and downloa
 
 Here is a map of the locations over which ALOS and DSWE data is downloaded:
 
-The input image stack consists of these following channels - 
-
-
 <div style="text-align:center;">
   <img src="figures/alos_scene_locations.png" alt="Map of ALOS scenes" width="65%">
 </div>
+
+
+The input image stack consists of these following channels - 
 
 ## 2. Downloading ancillary data and Generating Training Data
 Once the ALOS and DSWE data have been downloaded, we download overlapping GFC and Height Above Nearest Drainage (HAND) data. The DEM data is obtained as part of the SAR data downloads from the ASF DAAC. Then, we divide each scene and associated labels into 512x512 pixel non-overlapping chips. Then we have a dataset in the following format: 
