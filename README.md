@@ -19,7 +19,7 @@ The input image stack consists of these following channels -
 
 
 <div style="text-align:center;">
-  <img src="figures/alos_scene_locations.png" alt="Map of ALOS scenes" width="35%">
+  <img src="figures/alos_scene_locations.png" alt="Map of ALOS scenes" width="65%">
 </div>
 
 ## 2. Downloading ancillary data and Generating Training Data
