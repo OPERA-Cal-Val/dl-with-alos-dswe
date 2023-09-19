@@ -13,6 +13,15 @@ This creates the environment `dl-with-alos-dswe` and are used to run the noteboo
 ## 1. Start here - Downloading ALOS and USGS DSWE datasets
 The `0-Download-USGS-DSWE.ipynb` notebook demonstrates how to search and download ALOS and DSWE data that can be used to train our model. This notebook queries the ASF DAAC as well as the USGS to download overlapping ALOS and DSWE data. In particular, we are looking for ALOS images over the United States and overlapping DSWE data that are within 1 day of the ALOS acquisition. We discard any pairs of ALOS and DSWE images if more than 30% of the DSWE image contains clouds, or if more than 50% of the data overlapping the ALOS image is `no data`. Lastly, we ensure that each DSWE image contains at least 5% water within the ALOS acquisition bounds. NOTE: This notebook will take a significant amount of time to execute, as a lot of time is spent in querying the DAACs and filtering out datasets that do not contain enough usable information. For convenience, we provide a pre-compiled list of ASF granules and USGS DSWE tiles that can be directly queried and downloaded from the appropriate DAACs. The notebook `0b-Download-data.ipynb` demonstrates this, and it is recommended that users start with this notebook.
 
+Here is a map of the locations over which ALOS and DSWE data is downloaded:
+
+The input image stack consists of these following channels - 
+
+
+<div style="text-align:center;">
+  <img src="figures/alos_scene_locations.png" alt="Map of ALOS scenes" width="35%">
+</div>
+
 ## 2. Downloading ancillary data and Generating Training Data
 Once the ALOS and DSWE data have been downloaded, we download overlapping GFC and Height Above Nearest Drainage (HAND) data. The DEM data is obtained as part of the SAR data downloads from the ASF DAAC. Then, we divide each scene and associated labels into 512x512 pixel non-overlapping chips. Then we have a dataset in the following format: 
 
@@ -35,7 +44,9 @@ The input image stack consists of these following channels -
 
 The associated training labels are - 
 
-<img src="figures/training_labels.png" alt="Training sample for CNN" width="35%">
+<div style="text-align:center;">
+  <img src="figures/training_labels.png" alt="Training sample for CNN" width="35%">
+</div>
 
 Note that the training labels reflect the ['scan line' issue](https://www.usgs.gov/landsat-missions/landsat-7) exhibited by the Landsat 7 and the USGS DSWE data. Apart from reducing the amount of training data available, this does not bias or impair model training. Regions of the DSWE data containing partial surface water and cloud are also marked as 'no data' in the training labels.
 
