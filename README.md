@@ -8,12 +8,12 @@ This repository contains all of the code needed to download datasets, create tra
 
     mamba env create -f environment.yml
 
-This creates the environment `dl-with-alos-dswe` and are used to run the notebooks contained in this repository. The notebooks referred to in the below sections can be found within the `notebooks` folder.
+This creates the environment `dl-with-alos-dswe` and are used to run the notebooks contained in this repository. The notebooks referred to in the below sections can be found within the `notebooks/model-weights` folder.
 
 ## 1. Start here - Downloading ALOS and USGS DSWE datasets
 The `0-Download-USGS-DSWE.ipynb` notebook demonstrates how to search and download ALOS and DSWE data that can be used to train our model. This notebook queries the ASF DAAC as well as the USGS to download overlapping ALOS and DSWE data. In particular, we are looking for ALOS images over the United States and overlapping DSWE data that are within 1 day of the ALOS acquisition. We discard any pairs of ALOS and DSWE images if more than 30% of the DSWE image contains clouds, or if more than 50% of the data overlapping the ALOS image is `no data`. Lastly, we ensure that each DSWE image contains at least 5% water within the ALOS acquisition bounds. NOTE: This notebook will take a significant amount of time to execute, as a lot of time is spent in querying the DAACs and filtering out datasets that do not contain enough usable information. For convenience, we provide a pre-compiled list of ASF granules and USGS DSWE tiles that can be directly queried and downloaded from the appropriate DAACs. The notebook `0b-Download-data.ipynb` demonstrates this, and it is recommended that users start with this notebook.
 
-Here is a map of the locations over which ALOS and DSWE data is downloaded:
+Here is a map of the locations for downloaded ALOS and DSWE data:
 
 <div style="text-align:center;">
   <img src="figures/alos_scene_locations.png" alt="Map of ALOS scenes" width="65%">
