@@ -1,0 +1,26 @@
+name: dl-with-alos-dswe
+channels:
+  - conda-forge
+  - defaults
+  - pytorch
+dependencies:
+  - albumentations
+  - asf_search
+  - bs4
+  - geopandas
+  - jupyterlab
+  - matplotlib
+  - numpy
+  - pandas
+  - pip
+  - pystac-client
+  - pystac
+  - pytorch
+  - pytorch-lightning
+  - rasterio
+  - shapely
+  - tensorboard
+  - contextily
+  - pip:
+    - segmentation_models_pytorch
+    - tqdm
