@@ -1,5 +1,5 @@
 ## Overview
-This repository provides the python code associated with the IGARSS presentation []"Harmonizing SAR and optical data to map surface water extent: a deep learning approach"](https://ieeexplore.ieee.org/abstract/document/10282284/)
+This repository provides the python code associated with the IGARSS presentation ["Harmonizing SAR and optical data to map surface water extent: a deep learning approach"](https://ieeexplore.ieee.org/abstract/document/10282284/)
 
 In this repository, we demonstrate how optical data can improve inferences of surface water extent from SAR sensors. We demonstrate this by training a neural network on data from the ALOS-1 PALSAR instrument, along with annually-aggregated cloud-free optical images from the Landsat mission that is generated as part of the [Global Forest Change](https://storage.googleapis.com/earthenginepartners-hansen/GFC-2020-v1.8/) project. We use the USGS [Dynamic Surface Water Extent (DSWE) data product](https://www.usgs.gov/landsat-missions/landsat-collection-2-level-3-dynamic-surface-water-extent-science-product) as the source of our labels.
 
